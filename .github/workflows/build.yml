@@ -32,7 +32,7 @@ jobs:
       - name: Build Backend Image
         run: |
           docker build -t app-backend:${SHA_TAG} ./backend
-          docker tag app-backend:${SHA_TAG} ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/app-backend:${SHA_TAG}
+          docker tag backend-app:${SHA_TAG} ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/backend-app:${SHA_TAG}
 
       - name: Push Backend Image
         run: |
@@ -41,7 +41,7 @@ jobs:
       - name: Build Frontend Image
         run: |
           docker build -t app-frontend:${SHA_TAG} ./frontend
-          docker tag app-frontend:${SHA_TAG} ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/app-frontend:${SHA_TAG}
+          docker tag frontend-app:${SHA_TAG} ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/frontend-app:${SHA_TAG}
 
       - name: Push Frontend Image
         run: |
