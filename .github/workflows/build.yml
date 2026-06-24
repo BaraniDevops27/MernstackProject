@@ -6,10 +6,11 @@ on:
       - main
 
 permissions:
+  id-token: write
   contents: write
 
-
 jobs:
+
   build-and-push:
 
     runs-on: ubuntu-latest
@@ -19,53 +20,115 @@ jobs:
       - name: Checkout Source Code
         uses: actions/checkout@v4
 
-      - name: Generate Git SHA
-        id: vars
-        run: echo "SHA_TAG=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
 
-      - name: Configure AWS Credentials
+      - name: Generate Git SHA
+        run: |
+          echo "SHA_TAG=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+
+
+      - name: Configure AWS Credentials (OIDC)
+
         uses: aws-actions/configure-aws-credentials@v4
+
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+
           aws-region: ${{ secrets.AWS_REGION }}
 
+
+      - name: Verify AWS Login
+
+        run: |
+
+          aws sts get-caller-identity
+
+
       - name: Login to Amazon ECR
+
         uses: aws-actions/amazon-ecr-login@v2
 
+
       - name: Build Backend Image
+
         run: |
+
           docker build -t backend-app:${SHA_TAG} ./backend
-          docker tag backend-app:${SHA_TAG} ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/backend-app:${SHA_TAG}
+
+
+          docker tag backend-app:${SHA_TAG} \
+          ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/backend-app:${SHA_TAG}
+
+
 
       - name: Push Backend Image
+
         run: |
-          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/backend-app:${SHA_TAG}
+
+          docker push \
+          ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/backend-app:${SHA_TAG}
+
+
+
 
       - name: Build Frontend Image
+
         run: |
+
           docker build -t frontend-app:${SHA_TAG} ./frontend
-          docker tag frontend-app:${SHA_TAG} ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/frontend-app:${SHA_TAG}
+
+
+          docker tag frontend-app:${SHA_TAG} \
+          ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/frontend-app:${SHA_TAG}
+
+
 
       - name: Push Frontend Image
+
         run: |
-          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/frontend-app:${SHA_TAG}
+
+          docker push \
+          ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/frontend-app:${SHA_TAG}
+
+
+
 
       - name: Checkout GitOps Branch
+
         run: |
+
           git fetch origin gitops
+
           git checkout gitops
 
+
+
+
       - name: Update Kubernetes Manifests
+
         run: |
+
           sed -i "s|backend-app:.*|backend-app:${SHA_TAG}|g" k8s/backend-deployment.yaml
+
+
           sed -i "s|frontend-app:.*|frontend-app:${SHA_TAG}|g" k8s/frontend-deployment.yaml
 
+
+
+
       - name: Commit and Push Changes
+
         run: |
+
           git config --global user.email "github-actions@github.com"
+
           git config --global user.name "github-actions"
 
+
           git add .
+
+
           git commit -m "updated image tag to ${SHA_TAG}" || echo "No changes"
+
+
           git push origin gitops
