@@ -97,9 +97,9 @@ jobs:
 
         run: |
 
-          git fetch origin gitops
+          git fetch origin main
 
-          git checkout gitops
+          git checkout main
 
 
 
@@ -131,4 +131,4 @@ jobs:
           git commit -m "updated image tag to ${SHA_TAG}" || echo "No changes"
 
 
-          git push origin gitops
+          git push origin main
