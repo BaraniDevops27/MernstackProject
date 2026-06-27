@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
         - name: backend
-          image: 066591055151.dkr.ecr.ap-south-1.amazonaws.com/backend-app:${SHA_TAG}
+          image: 066591055151.dkr.ecr.ap-south-1.amazonaws.com/backend-app:0f16482
 
           env:
             - name: MONGODB_URI
